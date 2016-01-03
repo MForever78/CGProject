@@ -17,7 +17,7 @@ bool bWire = false;
 int wHeight = 0;
 int wWidth = 0;
 
-int texture[3];
+GLuint texture[3];
 
 void Draw_Leg();
 
@@ -25,8 +25,8 @@ typedef struct {
     unsigned short bfType;
     unsigned int bfSize;
     unsigned int bfReserved;
-    unsigned int bfOffBits;
-} BITMAPFILEHEADER;
+    unsigned int bfOffBytes;
+}  BITMAPFILEHEADER;
 
 typedef struct {
     unsigned int biSize;
@@ -56,16 +56,30 @@ unsigned char *loadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
         return NULL;
 
     // read bitmap file header
-    fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
+    fread(&bitmapFileHeader.bfType, 2, 1, filePtr);
+    fread(&bitmapFileHeader.bfSize, 4, 1, filePtr);
+    fread(&bitmapFileHeader.bfReserved, 4, 1, filePtr);
+    fread(&bitmapFileHeader.bfOffBytes, 4, 1, filePtr);
 
     // verify bitmap id
     if (bitmapFileHeader.bfType != BITMAP_ID) {
         fclose(filePtr);
+        printf("Not valid bmp file...\n");
         return NULL;
     }
 
     // read bitmap info header
-    fread(bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
+    fread(&bitmapInfoHeader->biSize, 4, 1, filePtr);
+    fread(&bitmapInfoHeader->biWidth, 4, 1, filePtr);
+    fread(&bitmapInfoHeader->biHeight, 4, 1, filePtr);
+    fread(&bitmapInfoHeader->biPlanes, 2, 1, filePtr);
+    fread(&bitmapInfoHeader->biBitCount, 2, 1, filePtr);
+    fread(&bitmapInfoHeader->biCompression, 4, 1, filePtr);
+    fread(&bitmapInfoHeader->biSizeImage, 4, 1, filePtr);
+    fread(&bitmapInfoHeader->biXPelsPerMeter, 4, 1, filePtr);
+    fread(&bitmapInfoHeader->biYPelsPerMeter, 4, 1, filePtr);
+    fread(&bitmapInfoHeader->biClrUsed, 4, 1, filePtr);
+    fread(&bitmapInfoHeader->biClrImportant, 4, 1, filePtr);
 
     // print out the info header
     printf("biSize: %d\n", bitmapInfoHeader->biSize);
@@ -73,10 +87,11 @@ unsigned char *loadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
     printf("biHeight: %d\n", bitmapInfoHeader->biHeight);
     printf("biPlanes: %d\n", bitmapInfoHeader->biPlanes);
     printf("biBitCount: %d\n", bitmapInfoHeader->biBitCount);
-    printf("biSizeImage: %d\n", bitmapInfoHeader->biSizeImage);
+    printf("biCompression: %hu\n", bitmapInfoHeader->biBitCount);
+    printf("biSizeImage: %u\n", bitmapInfoHeader->biSizeImage);
 
     // move pointer to the begining of bitmap data
-    fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
+    fseek(filePtr, bitmapFileHeader.bfOffBytes, SEEK_SET);
 
     // allocate memory
     bitmapImage = (unsigned char *) malloc(bitmapInfoHeader->biSizeImage);
@@ -106,6 +121,8 @@ unsigned char *loadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
 
     // close file and return
     fclose(filePtr);
+    
+    printf("Load image success.\n\n");
     return bitmapImage;
 }
 
@@ -150,11 +167,16 @@ void initTexture() {
 
 void Draw_Scene()
 {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture[0]);
+
 	glPushMatrix();
 	glTranslatef(0, 0, 4+1);
 	glRotatef(90, 1, 0, 0);
 	glutSolidTeapot(1);
 	glPopMatrix();
+
+    glDisable(GL_TEXTURE_2D);
 
 	glPushMatrix();
 	glTranslatef(0, 0, 3.5);
