@@ -23,7 +23,8 @@ int bunnyNumber;
 bool bAnim = false;
 
 bool bDrawList = false;
-GLint tableList=0;
+GLint tableLists[37];
+int tableIndex = 0;
 
 void DrawTable()
 {
@@ -110,7 +111,7 @@ GLint GenTableList()
 void Draw_Table_List()
 {
 
-    glCallList(tableList);
+    glCallList(tableLists[tableIndex]);
 }
 
 void DrawScene()
@@ -151,14 +152,14 @@ void key(unsigned char k, int x, int y)
         case 'i': {
             if (bunnyNumber < 36) {
                 bunnyNumber++;
-                tableList = GenTableList();
+                tableIndex++;
             }
             break;
         }
         case 'k': {
             if (bunnyNumber > 0) {
                 bunnyNumber--;
-                tableList = GenTableList();
+                tableIndex--;
             }
             break;
         }
@@ -296,7 +297,12 @@ int main (int argc,  char *argv[])
     glutKeyboardFunc(key);
     glutIdleFunc(idle);
     
-    tableList = GenTableList();
+    int i;
+    for (i = 0; i < 37; i++) {
+        bunnyNumber = i;
+        tableLists[i] = GenTableList();
+    }
+    bunnyNumber = 0;
     
     glutMainLoop();
     return 0;
